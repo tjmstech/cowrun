@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>카우런 랭킹</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--f:"Jua","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:var(--f);color:#2c4a6e}
+body{background:linear-gradient(#3fa9ff,#c9efff 55%,#74d44e 55%,#68c943);background-attachment:fixed;padding:18px 12px 40px}
+.wrap{max-width:720px;margin:0 auto}
+h1{margin:6px 0 2px;text-align:center;font-size:44px;font-weight:400;color:#ffd21f;letter-spacing:1px;text-shadow:-2px -2px 0 #8a3b00,2px -2px 0 #8a3b00,-2px 2px 0 #8a3b00,2px 2px 0 #8a3b00,0 5px 0 #8a3b00}
+.top{display:flex;justify-content:center;align-items:center;gap:10px;margin:8px 0 14px;flex-wrap:wrap}
+.live{display:inline-flex;align-items:center;gap:6px;background:#1b3468;color:#fff;border:2.5px solid #fff;border-radius:999px;padding:4px 14px;font-size:15px}
+.dot{width:10px;height:10px;border-radius:50%;background:#aaa}
+.live.on .dot{background:#5dff6a;box-shadow:0 0 8px #5dff6a}
+a.play{background:linear-gradient(#8ee84f,#3fb81e);color:#fff;text-decoration:none;border:2.5px solid #fff;border-radius:999px;padding:4px 16px;font-size:15px;box-shadow:0 3px 0 #2a8a10}
+.card{background:linear-gradient(#fff,#eaf6ff);border:4px solid #3d9bff;border-radius:26px;box-shadow:0 7px 0 #1e63b8,0 16px 36px rgba(0,0,0,.25);padding:12px}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;background:#fff;border:2.5px solid #cfe7ff;border-radius:16px;padding:8px 12px;margin:6px 0}
+.rk{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#e3f1ff;color:#2a6fc4}
+.row.r1{border-color:#ffc400;background:linear-gradient(#fffbe0,#fff)} .row.r1 .rk{background:linear-gradient(#ffe14d,#ffb300);color:#7a3b00;box-shadow:0 3px 0 #c98a00}
+.row.r2 .rk{background:linear-gradient(#f4f7fa,#b9c4cf);color:#4a5560;box-shadow:0 3px 0 #8d98a6}
+.row.r3 .rk{background:linear-gradient(#ffc9a0,#d98a4e);color:#6a3410;box-shadow:0 3px 0 #a8602a}
+.nm{font-size:21px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub{font-size:13px;color:#6a8ab0}
+.sc{text-align:right;font-size:23px;color:#f4511e;white-space:nowrap}
+.gd{display:inline-block;font-size:12px;color:#d32f2f;border:2px solid #d32f2f;border-radius:7px;padding:0 6px;margin-left:6px;vertical-align:middle}
+.empty{text-align:center;padding:30px 10px;color:#6a8ab0;font-size:17px}
+.adm{margin-top:18px;text-align:center}
+button,input{font-family:var(--f)}
+.b{border:2.5px solid #fff;border-radius:12px;padding:6px 12px;font-size:14px;color:#fff;background:linear-gradient(#5db8ff,#2a84e8);box-shadow:0 3px 0 #1a5fb0;cursor:pointer}
+.b.red{background:linear-gradient(#ff7a6a,#e23a2a);box-shadow:0 3px 0 #a81f14}
+.b.gray{background:linear-gradient(#b9c4cf,#8d98a6);box-shadow:0 3px 0 #5c6670}
+.b:active{transform:translateY(2px)}
+.panel{display:none;background:#fff;border:2.5px solid #cfe7ff;border-radius:16px;padding:12px;margin-top:10px;text-align:left;font-size:15px}
+.panel input{font-size:16px;padding:8px 10px;border:2.5px solid #9fd0ff;border-radius:10px;margin:4px 4px 4px 0;max-width:100%}
+.tools{display:none;gap:6px;margin-top:6px;flex-wrap:wrap;grid-column:1/-1}
+.admin .tools{display:flex}
+.tools input{font-size:15px;padding:5px 8px;border:2px solid #9fd0ff;border-radius:8px;width:110px}
+.err{color:#d32f2f;margin-top:6px;min-height:1em}
+.note{font-size:13px;color:#6a8ab0;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>카우런 랭킹</h1>
+  <div style="text-align:center;color:#fff;font-size:17px;text-shadow:0 2px 0 rgba(0,0,0,.25)">TOP 20</div>
+  <div class="top">
+    <span class="live" id="live"><span class="dot"></span><span id="liveT">연결 중…</span></span>
+    <a class="play" href="index.html">게임 하러 가기</a>
+  </div>
+  <div class="card" id="card">
+    <div id="list"><div class="empty">랭킹을 불러오는 중…</div></div>
+  </div>
+
+  <div class="adm">
+    <button class="b gray" id="admBtn">관리자</button>
+    <div class="panel" id="login">
+      <div>관리자 로그인 (Firebase에 등록한 이메일과 비밀번호)</div>
+      <input id="em" type="email" placeholder="이메일" autocomplete="username">
+      <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+      <button class="b" id="loginBtn">로그인</button>
+      <div class="err" id="loginErr"></div>
+    </div>
+    <div class="panel" id="adminBar">
+      <div>관리자 모드입니다. 모든 등록 기록이 보이고, 기록마다 수정·삭제할 수 있어요.</div>
+      <div style="margin-top:8px">
+        <button class="b red" id="wipeBtn">전체 기록 삭제</button>
+        <button class="b gray" id="logoutBtn">관리자 모드 끄기</button>
+      </div>
+      <div class="err" id="admErr"></div>
+      <div class="note">점수 상위 300개 기록까지 표시돼요.</div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const C=window.COWRUN_CONFIG||{};
+const DB=(C.databaseURL||'').replace(/\/+$/,'');
+const GRADES=[[0,'등외'],[500,'3등급'],[1200,'2등급'],[2500,'1등급'],[4500,'1+ 등급'],[7000,'1++ 등급']];
+let data={},token=null,admin=false,editing=null,wipeArmed=false;
+
+function grade(s){let g=GRADES[0][1];for(const [m,n] of GRADES)if(s>=m)g=n;return g;}
+function fmt(n){return Math.floor(n||0).toLocaleString('ko-KR');}
+function fmtTime(t){t=Math.round(t||0);return (t>=60?Math.floor(t/60)+'분 ':'')+(t%60)+'초';}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+
+function render(force){
+  const list=$('list');
+  if(editing&&!force&&document.activeElement&&document.activeElement.tagName==='INPUT'&&list.contains(document.activeElement))return; // don't redraw while typing
+  let rows=Object.keys(data).map(id=>Object.assign({id},data[id])).filter(r=>r&&typeof r.score==='number');
+  rows.sort((a,b)=>b.score-a.score||(a.at||0)-(b.at||0));
+  if(!admin){const seen=new Set();rows=rows.filter(r=>{const k=String(r.name);if(seen.has(k))return false;seen.add(k);return true;});rows=rows.slice(0,20);}
+  list.textContent='';
+  if(!rows.length){list.appendChild(el('div','empty',DB?'아직 등록된 기록이 없어요. 첫 번째 주인공이 되어 보세요!':'config.js에 Firebase 주소가 아직 없어요.'));return;}
+  rows.forEach((r,i)=>{
+    const row=el('div','row'+(i<3?' r'+(i+1):''));
+    row.appendChild(el('div','rk',i+1));
+    const mid=el('div');const nm=el('div','nm',r.name);nm.appendChild(el('span','gd',grade(r.score)));mid.appendChild(nm);
+    mid.appendChild(el('div','sub',fmt(r.dist)+'m · '+fmtTime(r.time)+(admin&&r.at?' · '+new Date(r.at).toLocaleString('ko-KR'):'')));
+    row.appendChild(mid);row.appendChild(el('div','sc',fmt(r.score)+'점'));
+    if(admin){
+      const t=el('div','tools');
+      if(editing===r.id){
+        const n=el('input');n.value=r.name;n.maxLength=8;const s=el('input');s.type='number';s.value=r.score;
+        const ok=el('button','b','저장');ok.onclick=()=>saveEdit(r.id,n.value.trim(),Number(s.value));
+        const no=el('button','b gray','취소');no.onclick=()=>{editing=null;render(true);};
+        t.append(n,s,ok,no);
+      }else{
+        const e=el('button','b','수정');e.onclick=()=>{editing=r.id;render();};
+        const d=el('button','b red','삭제');d.onclick=()=>{if(d.dataset.arm){del(r.id);}else{d.dataset.arm=1;d.textContent='한 번 더 누르면 삭제';}};
+        t.append(e,d);
+      }
+      row.appendChild(t);
+    }
+    list.appendChild(row);
+  });
+}
+
+/* ---- live stream from Firebase Realtime Database ---- */
+function apply(path,val,patch){
+  const p=path.split('/').filter(Boolean);
+  if(!p.length){if(patch)Object.assign(data,val||{});else data=val||{};}
+  else if(p.length===1){if(val===null)delete data[p[0]];else if(patch)data[p[0]]=Object.assign(data[p[0]]||{},val);else data[p[0]]=val;}
+  else{data[p[0]]=data[p[0]]||{};if(val===null)delete data[p[0]][p[1]];else data[p[0]][p[1]]=val;}
+  for(const k in data)if(data[k]===null)delete data[k];
+  render();
+}
+function setLive(on,txt){$('live').className='live'+(on?' on':'');$('liveT').textContent=txt;}
+function connect(){
+  if(!DB){setLive(false,'설정 필요');render();return;}
+  const es=new EventSource(DB+'/scores.json?orderBy=%22score%22&limitToLast=300');
+  es.addEventListener('put',e=>{const m=JSON.parse(e.data);apply(m.path,m.data,false);});
+  es.addEventListener('patch',e=>{const m=JSON.parse(e.data);apply(m.path,m.data,true);});
+  es.onopen=()=>setLive(true,'실시간 연결됨');
+  es.onerror=()=>setLive(false,'다시 연결 중…');
+}
+
+/* ---- admin ---- */
+function admErr(t){$('admErr').textContent=t||'';}
+async function call(method,path,body){
+  const r=await fetch(DB+path+'?auth='+encodeURIComponent(token),{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  if(r.status===401||r.status===403){admErr(r.status===401?'로그인이 만료됐어요. 관리자 모드를 껐다가 다시 로그인해 주세요.':'권한이 없어요. Firebase 규칙의 UID가 이 계정과 같은지 확인해 주세요.');throw new Error('auth');}
+  if(!r.ok){admErr('요청에 실패했어요 ('+r.status+').');throw new Error(r.status);}
+  admErr('');return r;
+}
+async function del(id){try{await call('DELETE','/scores/'+id+'.json');}catch(e){render();}}
+async function saveEdit(id,name,score){
+  if(!name||name.length>8||!isFinite(score)||score<0){admErr('닉네임은 1~8자, 점수는 0 이상의 숫자여야 해요.');return;}
+  try{await call('PATCH','/scores/'+id+'.json',{name,score:Math.floor(score)});editing=null;render(true);}catch(e){}
+}
+$('admBtn').onclick=()=>{if(admin)return;const l=$('login');l.style.display=l.style.display==='block'?'none':'block';};
+$('loginBtn').onclick=async()=>{
+  $('loginErr').textContent='';
+  if(!C.apiKey){$('loginErr').textContent='config.js에 apiKey가 없어요.';return;}
+  try{
+    const r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(C.apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('em').value.trim(),password:$('pw').value,returnSecureToken:true})});
+    const j=await r.json();
+    if(!r.ok||!j.idToken){$('loginErr').textContent='로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.';return;}
+    token=j.idToken;admin=true;$('pw').value='';
+    $('login').style.display='none';$('adminBar').style.display='block';$('admBtn').style.display='none';
+    document.body.classList.add('admin');render();
+  }catch(e){$('loginErr').textContent='로그인 요청을 보내지 못했어요. 인터넷 연결을 확인해 주세요.';}
+};
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click();});
+$('logoutBtn').onclick=()=>{token=null;admin=false;editing=null;wipeArmed=false;$('wipeBtn').textContent='전체 기록 삭제';
+  $('adminBar').style.display='none';$('admBtn').style.display='inline-block';document.body.classList.remove('admin');render();};
+$('wipeBtn').onclick=async()=>{
+  if(!wipeArmed){wipeArmed=true;$('wipeBtn').textContent='정말 전부 삭제? 한 번 더 누르면 삭제';setTimeout(()=>{wipeArmed=false;$('wipeBtn').textContent='전체 기록 삭제';},4000);return;}
+  wipeArmed=false;$('wipeBtn').textContent='전체 기록 삭제';
+  try{await call('DELETE','/scores.json');}catch(e){}
+};
+connect();
+</script>
+</body>
+</html>
