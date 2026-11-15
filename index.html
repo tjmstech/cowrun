@@ -19,7 +19,7 @@ canvas{display:block;position:fixed;left:0;top:0;width:100%;height:100%;touch-ac
 #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 100px);transform:translateX(-50%);background:linear-gradient(#ff7a3d,#f4511e);border:2.5px solid #fff;color:#fff;font-size:18px;padding:8px 18px;border-radius:999px;white-space:nowrap;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:0 3px 0 rgba(0,0,0,.25)}
 .screen{position:fixed;left:0;top:0;width:100%;height:var(--vh,100%);display:none;align-items:flex-start;justify-content:center;background:rgba(20,60,120,.35);padding:calc(env(safe-area-inset-top) + 12px) 14px calc(env(safe-area-inset-bottom) + 16px);box-sizing:border-box;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .card{margin:auto;background:linear-gradient(#ffffff,#eaf6ff);border-radius:28px;padding:16px 16px 16px;max-width:370px;width:100%;text-align:center;box-shadow:0 7px 0 #1e63b8,0 18px 40px rgba(0,0,0,.3);border:4px solid #3d9bff;box-sizing:border-box}
-h1{margin:2px 0 2px;font-size:40px;font-weight:400;color:#ffd21f;letter-spacing:1px;text-shadow:-2px -2px 0 #8a3b00,2px -2px 0 #8a3b00,-2px 2px 0 #8a3b00,2px 2px 0 #8a3b00,0 5px 0 #8a3b00}
+h1{margin:2px 0 6px;font-size:44px;font-weight:400;color:#ffd21f;letter-spacing:2px;text-shadow:3.0px 0.0px 0 #7a3400,2.8px 1.1px 0 #7a3400,2.1px 2.1px 0 #7a3400,1.1px 2.8px 0 #7a3400,0.0px 3.0px 0 #7a3400,-1.1px 2.8px 0 #7a3400,-2.1px 2.1px 0 #7a3400,-2.8px 1.1px 0 #7a3400,-3.0px 0.0px 0 #7a3400,-2.8px -1.1px 0 #7a3400,-2.1px -2.1px 0 #7a3400,-1.1px -2.8px 0 #7a3400,-0.0px -3.0px 0 #7a3400,1.1px -2.8px 0 #7a3400,2.1px -2.1px 0 #7a3400,2.8px -1.1px 0 #7a3400,3.0px 4.0px 0 #7a3400,2.8px 5.1px 0 #7a3400,2.1px 6.1px 0 #7a3400,1.1px 6.8px 0 #7a3400,0.0px 7.0px 0 #7a3400,-1.1px 6.8px 0 #7a3400,-2.1px 6.1px 0 #7a3400,-2.8px 5.1px 0 #7a3400,-3.0px 4.0px 0 #7a3400,-2.8px 2.9px 0 #7a3400,-2.1px 1.9px 0 #7a3400,-1.1px 1.2px 0 #7a3400,-0.0px 1.0px 0 #7a3400,1.1px 1.2px 0 #7a3400,2.1px 1.9px 0 #7a3400,2.8px 2.9px 0 #7a3400}
 .sub{color:#2a6fc4;margin-bottom:12px;font-size:16px}
 .hero{width:168px;height:auto;margin:-6px 0 -10px}
 .btn.gold{background:linear-gradient(#ffd84d,#ff9f0a);box-shadow:0 6px 0 #c46a00;font-size:20px;padding:12px}
@@ -75,6 +75,8 @@ tr.tot td{border-top:2px dashed #cfe7ff;font-size:21px;color:#f4511e}
 #pauseBtn i{display:block;width:6px;height:16px;border-radius:2px;background:#fff}
 #pause h1{font-size:36px;margin-bottom:8px}
 #pause .info{font-size:16px;color:#2a6fc4;margin-bottom:4px}
+.nlabel{font-size:15px;color:#2c4a6e;margin-bottom:6px}
+.nlabel.warn{color:#e23a2a}
 </style>
 </head>
 <body>
@@ -100,8 +102,9 @@ tr.tot td{border-top:2px dashed #cfe7ff;font-size:21px;color:#f4511e}
     <img class="hero" data-s="cowIcon" alt="">
     <h1>카우런</h1>
     <div class="sub">소고기가 되기 싫어! 농장을 탈출하라!</div>
-    <input id="nick" maxlength="8" placeholder="닉네임 입력" autocomplete="off">
-    <button class="btn" id="startBtn">도망치기 시작!</button>
+    <div class="nlabel" id="nLabel">학번+이름을 적고 시작하세요</div>
+    <input id="nick" maxlength="12" placeholder="예: 30215홍길동" autocomplete="off">
+    <button class="btn" id="startBtn">게임 시작</button>
     <div class="how">
       <div class="t">조작 · 화면을 스와이프!</div>
       <div>← → 줄 바꾸기 · ↑ 점프 · ↓ 슬라이드</div>
@@ -251,11 +254,13 @@ function cowIcon(){return mk(360,350,x=>{
   // shoulders + scarf (inside emblem)
   E(x,cx,352,118,92,rgr(x,cx,352,118,...CB),0,CO,3);
   x.restore();
+  // neck
+  RR(x,cx-50,214,100,84,30,lgr(x,cx-50,0,cx+50,0,'#c98a48','#dba25f','#b0722f'),CO,3);
   // ears
-  for(const m of[-1,1]){x.save();x.translate(cx,0);x.scale(m,1);x.beginPath();x.moveTo(-76,136);x.quadraticCurveTo(-118,96,-148,122);x.quadraticCurveTo(-126,160,-80,158);x.closePath();x.fillStyle=lgr(x,-148,100,-76,160,'#c98a48','#e9b574');x.fill();x.strokeStyle=CO;x.lineWidth=3;x.stroke();
+  for(const m of[-1,1]){x.save();x.translate(cx,0);x.scale(m,1);x.beginPath();x.moveTo(-56,128);x.quadraticCurveTo(-118,96,-148,122);x.quadraticCurveTo(-126,164,-56,164);x.closePath();x.fillStyle=lgr(x,-148,100,-76,160,'#c98a48','#e9b574');x.fill();x.strokeStyle=CO;x.lineWidth=3;x.stroke();
     x.beginPath();x.moveTo(-86,140);x.quadraticCurveTo(-114,116,-134,126);x.quadraticCurveTo(-118,148,-88,150);x.closePath();x.fillStyle='#f9a9ba';x.fill();x.restore();}
   // horns
-  for(const m of[-1,1]){x.save();x.translate(cx,0);x.scale(m,1);x.beginPath();x.moveTo(-58,98);x.quadraticCurveTo(-82,84,-76,50);x.quadraticCurveTo(-50,62,-36,88);x.closePath();x.fillStyle=lgr(x,-78,52,-40,96,'#fffdf2','#e6cc92');x.fill();x.strokeStyle='#a88a4e';x.lineWidth=3;x.stroke();x.restore();}
+  for(const m of[-1,1]){x.save();x.translate(cx,0);x.scale(m,1);x.beginPath();x.moveTo(-70,132);x.quadraticCurveTo(-92,92,-80,46);x.quadraticCurveTo(-46,66,-22,124);x.closePath();x.fillStyle=lgr(x,-78,52,-40,96,'#fffdf2','#e6cc92');x.fill();x.strokeStyle='#a88a4e';x.lineWidth=3;x.stroke();x.restore();}
   // head
   x.beginPath();x.moveTo(cx-84,150);x.bezierCurveTo(cx-88,84,cx+88,84,cx+84,150);x.bezierCurveTo(cx+84,214,cx+58,250,cx,250);x.bezierCurveTo(cx-58,250,cx-84,214,cx-84,150);x.closePath();
   x.fillStyle=rgr(x,cx,160,92,'#f9d8a6','#e0a865','#b0722f');x.fill();x.strokeStyle=CO;x.lineWidth=3.5;x.stroke();
@@ -276,7 +281,7 @@ function cowIcon(){return mk(360,350,x=>{
     x.beginPath();x.moveTo(ex-m*24,ey-12);x.quadraticCurveTo(ex,ey-32,ex+m*22,ey-16);x.strokeStyle='#3a2010';x.lineWidth=5;x.stroke();}
   x.strokeStyle='#5a3418';x.lineWidth=7;x.beginPath();x.moveTo(cx-66,116);x.lineTo(cx-24,112);x.moveTo(cx+66,110);x.lineTo(cx+26,116);x.stroke();
   // scarf
-  x.save();x.translate(cx+52,270);x.rotate(.5);P(x,[0,0,34,10,22,22,40,34,8,26],lgr(x,0,0,40,30,'#ff5a5a','#c81e1e'),'#a81818',2.5);x.restore();
+  x.save();x.translate(cx+44,266);x.rotate(.5);P(x,[-6,-4,34,10,22,22,40,34,4,28],lgr(x,0,0,40,30,'#ff5a5a','#c81e1e'),'#a81818',2.5);x.restore();
   x.beginPath();x.moveTo(cx-70,246);x.quadraticCurveTo(cx,290,cx+70,246);x.quadraticCurveTo(cx+74,262,cx+62,272);x.quadraticCurveTo(cx,310,cx-62,272);x.quadraticCurveTo(cx-74,262,cx-70,246);x.closePath();
   x.fillStyle=lgr(x,0,246,0,300,'#ff6a6a','#d42020');x.fill();x.strokeStyle='#a81818';x.lineWidth=3;x.stroke();
   ball(x,cx+50,268,12,'#ff9a9a','#f03a3a','#c21e1e','#a81818');
@@ -586,7 +591,10 @@ function showMenu(){
 }
 function startGame(){
   initAudio();
-  nick=($('nick').value||'').trim()||'이름없는';
+  const nv=($('nick').value||'').trim();
+  if(!nv){const l=$('nLabel');l.textContent='학번+이름을 먼저 적어 주세요!';l.className='nlabel warn';$('nick').focus();return;}
+  $('nLabel').textContent='학번+이름을 적고 시작하세요';$('nLabel').className='nlabel';
+  nick=nv;
   try{localStorage.setItem('cowNick',nick);}catch(e){}
   $('nick').blur();
   newGame();state='play';hudCache={};

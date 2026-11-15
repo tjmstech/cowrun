@@ -11,7 +11,7 @@
 html,body{margin:0;min-height:100%;font-family:var(--f);color:#2c4a6e}
 body{background:linear-gradient(#3fa9ff,#c9efff 55%,#74d44e 55%,#68c943);background-attachment:fixed;padding:18px 12px 40px}
 .wrap{max-width:720px;margin:0 auto}
-h1{margin:6px 0 2px;text-align:center;font-size:44px;font-weight:400;color:#ffd21f;letter-spacing:1px;text-shadow:-2px -2px 0 #8a3b00,2px -2px 0 #8a3b00,-2px 2px 0 #8a3b00,2px 2px 0 #8a3b00,0 5px 0 #8a3b00}
+h1{margin:6px 0 4px;text-align:center;font-size:44px;font-weight:400;color:#ffd21f;letter-spacing:2px;text-shadow:3.0px 0.0px 0 #7a3400,2.8px 1.1px 0 #7a3400,2.1px 2.1px 0 #7a3400,1.1px 2.8px 0 #7a3400,0.0px 3.0px 0 #7a3400,-1.1px 2.8px 0 #7a3400,-2.1px 2.1px 0 #7a3400,-2.8px 1.1px 0 #7a3400,-3.0px 0.0px 0 #7a3400,-2.8px -1.1px 0 #7a3400,-2.1px -2.1px 0 #7a3400,-1.1px -2.8px 0 #7a3400,-0.0px -3.0px 0 #7a3400,1.1px -2.8px 0 #7a3400,2.1px -2.1px 0 #7a3400,2.8px -1.1px 0 #7a3400,3.0px 4.0px 0 #7a3400,2.8px 5.1px 0 #7a3400,2.1px 6.1px 0 #7a3400,1.1px 6.8px 0 #7a3400,0.0px 7.0px 0 #7a3400,-1.1px 6.8px 0 #7a3400,-2.1px 6.1px 0 #7a3400,-2.8px 5.1px 0 #7a3400,-3.0px 4.0px 0 #7a3400,-2.8px 2.9px 0 #7a3400,-2.1px 1.9px 0 #7a3400,-1.1px 1.2px 0 #7a3400,-0.0px 1.0px 0 #7a3400,1.1px 1.2px 0 #7a3400,2.1px 1.9px 0 #7a3400,2.8px 2.9px 0 #7a3400}
 .top{display:flex;justify-content:center;align-items:center;gap:10px;margin:8px 0 14px;flex-wrap:wrap}
 .live{display:inline-flex;align-items:center;gap:6px;background:#1b3468;color:#fff;border:2.5px solid #fff;border-radius:999px;padding:4px 14px;font-size:15px}
 .dot{width:10px;height:10px;border-radius:50%;background:#aaa}
@@ -106,7 +106,7 @@ function render(force){
     if(admin){
       const t=el('div','tools');
       if(editing===r.id){
-        const n=el('input');n.value=r.name;n.maxLength=8;const s=el('input');s.type='number';s.value=r.score;
+        const n=el('input');n.value=r.name;n.maxLength=12;const s=el('input');s.type='number';s.value=r.score;
         const ok=el('button','b','저장');ok.onclick=()=>saveEdit(r.id,n.value.trim(),Number(s.value));
         const no=el('button','b gray','취소');no.onclick=()=>{editing=null;render(true);};
         t.append(n,s,ok,no);
@@ -150,7 +150,7 @@ async function call(method,path,body){
 }
 async function del(id){try{await call('DELETE','/scores/'+id+'.json');}catch(e){render();}}
 async function saveEdit(id,name,score){
-  if(!name||name.length>8||!isFinite(score)||score<0){admErr('닉네임은 1~8자, 점수는 0 이상의 숫자여야 해요.');return;}
+  if(!name||name.length>12||!isFinite(score)||score<0){admErr('이름은 1~12자, 점수는 0 이상의 숫자여야 해요.');return;}
   try{await call('PATCH','/scores/'+id+'.json',{name,score:Math.floor(score)});editing=null;render(true);}catch(e){}
 }
 $('admBtn').onclick=()=>{if(admin)return;const l=$('login');l.style.display=l.style.display==='block'?'none':'block';};
