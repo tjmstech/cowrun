@@ -9,7 +9,7 @@
 :root{--f:"Jua","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:var(--f);color:#2c4a6e}
-body{background:linear-gradient(#3fa9ff,#c9efff 55%,#74d44e 55%,#68c943);background-attachment:fixed;padding:18px 12px 40px}
+body{background:linear-gradient(#3fa9ff,#c9efff 55%,#74d44e 55%,#68c943);background-attachment:fixed;padding:18px 10px 40px}
 .wrap{max-width:720px;margin:0 auto}
 h1{margin:6px 0 4px;text-align:center;font-size:44px;font-weight:400;color:#ffd21f;letter-spacing:2px;text-shadow:3.0px 0.0px 0 #7a3400,2.8px 1.1px 0 #7a3400,2.1px 2.1px 0 #7a3400,1.1px 2.8px 0 #7a3400,0.0px 3.0px 0 #7a3400,-1.1px 2.8px 0 #7a3400,-2.1px 2.1px 0 #7a3400,-2.8px 1.1px 0 #7a3400,-3.0px 0.0px 0 #7a3400,-2.8px -1.1px 0 #7a3400,-2.1px -2.1px 0 #7a3400,-1.1px -2.8px 0 #7a3400,-0.0px -3.0px 0 #7a3400,1.1px -2.8px 0 #7a3400,2.1px -2.1px 0 #7a3400,2.8px -1.1px 0 #7a3400,3.0px 4.0px 0 #7a3400,2.8px 5.1px 0 #7a3400,2.1px 6.1px 0 #7a3400,1.1px 6.8px 0 #7a3400,0.0px 7.0px 0 #7a3400,-1.1px 6.8px 0 #7a3400,-2.1px 6.1px 0 #7a3400,-2.8px 5.1px 0 #7a3400,-3.0px 4.0px 0 #7a3400,-2.8px 2.9px 0 #7a3400,-2.1px 1.9px 0 #7a3400,-1.1px 1.2px 0 #7a3400,-0.0px 1.0px 0 #7a3400,1.1px 1.2px 0 #7a3400,2.1px 1.9px 0 #7a3400,2.8px 2.9px 0 #7a3400}
 .top{display:flex;justify-content:center;align-items:center;gap:10px;margin:8px 0 14px;flex-wrap:wrap}
@@ -17,16 +17,17 @@ h1{margin:6px 0 4px;text-align:center;font-size:44px;font-weight:400;color:#ffd2
 .dot{width:10px;height:10px;border-radius:50%;background:#aaa}
 .live.on .dot{background:#5dff6a;box-shadow:0 0 8px #5dff6a}
 a.play{background:linear-gradient(#8ee84f,#3fb81e);color:#fff;text-decoration:none;border:2.5px solid #fff;border-radius:999px;padding:4px 16px;font-size:15px;box-shadow:0 3px 0 #2a8a10}
-.card{background:linear-gradient(#fff,#eaf6ff);border:4px solid #3d9bff;border-radius:26px;box-shadow:0 7px 0 #1e63b8,0 16px 36px rgba(0,0,0,.25);padding:12px}
-.row{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;background:#fff;border:2.5px solid #cfe7ff;border-radius:16px;padding:8px 12px;margin:6px 0}
-.rk{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#e3f1ff;color:#2a6fc4}
+.card{background:linear-gradient(#fff,#eaf6ff);border:4px solid #3d9bff;border-radius:26px;box-shadow:0 7px 0 #1e63b8,0 16px 36px rgba(0,0,0,.25);padding:8px}
+.row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:8px;align-items:center;background:#fff;border:2.5px solid #cfe7ff;border-radius:16px;padding:8px 10px;margin:6px 0}
+.mid{min-width:0}
+.rk{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#e3f1ff;color:#2a6fc4}
 .row.r1{border-color:#ffc400;background:linear-gradient(#fffbe0,#fff)} .row.r1 .rk{background:linear-gradient(#ffe14d,#ffb300);color:#7a3b00;box-shadow:0 3px 0 #c98a00}
 .row.r2 .rk{background:linear-gradient(#f4f7fa,#b9c4cf);color:#4a5560;box-shadow:0 3px 0 #8d98a6}
 .row.r3 .rk{background:linear-gradient(#ffc9a0,#d98a4e);color:#6a3410;box-shadow:0 3px 0 #a8602a}
-.nm{font-size:21px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sub{font-size:13px;color:#6a8ab0}
-.sc{text-align:right;font-size:23px;color:#f4511e;white-space:nowrap}
-.gd{display:inline-block;font-size:12px;color:#d32f2f;border:2px solid #d32f2f;border-radius:7px;padding:0 6px;margin-left:6px;vertical-align:middle}
+.nm{font-size:clamp(17px,5vw,21px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub{font-size:13px;color:#6a8ab0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc{text-align:right;font-size:clamp(18px,5.4vw,23px);color:#f4511e;white-space:nowrap}
+.gd{display:inline-block;font-size:11px;color:#d32f2f;border:1.5px solid #d32f2f;border-radius:6px;padding:0 5px;margin-right:6px;vertical-align:1px}
 .empty{text-align:center;padding:30px 10px;color:#6a8ab0;font-size:17px}
 .adm{margin-top:18px;text-align:center}
 button,input{font-family:var(--f)}
@@ -100,8 +101,8 @@ function render(force){
   rows.forEach((r,i)=>{
     const row=el('div','row'+(i<3?' r'+(i+1):''));
     row.appendChild(el('div','rk',i+1));
-    const mid=el('div');const nm=el('div','nm',r.name);nm.appendChild(el('span','gd',grade(r.score)));mid.appendChild(nm);
-    mid.appendChild(el('div','sub',fmt(r.dist)+'m · '+fmtTime(r.time)+(admin&&r.at?' · '+new Date(r.at).toLocaleString('ko-KR'):'')));
+    const mid=el('div','mid');mid.appendChild(el('div','nm',r.name));
+    const sub=el('div','sub');sub.appendChild(el('span','gd',grade(r.score)));sub.appendChild(document.createTextNode(fmt(r.dist)+'m · '+fmtTime(r.time)+(admin&&r.at?' · '+new Date(r.at).toLocaleString('ko-KR'):'')));mid.appendChild(sub);
     row.appendChild(mid);row.appendChild(el('div','sc',fmt(r.score)+'점'));
     if(admin){
       const t=el('div','tools');
