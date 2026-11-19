@@ -42,6 +42,11 @@ button,input{font-family:var(--f)}
 .tools input{font-size:15px;padding:5px 8px;border:2px solid #9fd0ff;border-radius:8px;width:110px}
 .err{color:#d32f2f;margin-top:6px;min-height:1em}
 .note{font-size:13px;color:#6a8ab0;margin-top:6px}
+.audit{grid-column:1/-1;display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.45;border-radius:10px;padding:6px 10px;margin-top:2px;background:#f2f4f8;color:#5a6a8a}
+.audit b{flex:none;font-size:12px;border-radius:999px;padding:1px 9px;color:#fff;background:#9aa3b5}
+.audit.l0 b{background:#3fb81e}.audit.l1{background:#fff7dc;color:#7a5a00}.audit.l1 b{background:#f0a000}.audit.l2{background:#ffe6e2;color:#a8281a}.audit.l2 b{background:#e23a2a}
+.audit.l-1 b{background:#b9c4cf}
+.auditbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style>
 </head>
 <body>
@@ -68,6 +73,8 @@ button,input{font-family:var(--f)}
     </div>
     <div class="panel" id="adminBar">
       <div>관리자 모드입니다. 모든 등록 기록이 보이고, 기록마다 수정·삭제할 수 있어요.</div>
+      <div class="auditbar"><b id="auditSum" style="font-weight:400"></b><button class="b" id="suspBtn">의심 기록만 보기</button></div>
+      <div style="font-size:13px;color:#6a8ab0;margin-top:4px;line-height:1.5">기록마다 <b>정상 / 확인 필요 / 의심</b> 표시가 붙어요. 서버 시계로 잰 실제 플레이 시간을 정상 속도일 때 걸리는 시간과 비교한 결과예요. 렉이 심한 폰이나 일시정지를 오래 한 경우에도 표시될 수 있으니 참고용으로 봐 주세요.</div>
       <div style="margin-top:8px">
         <button class="b red" id="wipeBtn">전체 기록 삭제</button>
         <button class="b gray" id="logoutBtn">관리자 모드 끄기</button>
@@ -91,12 +98,39 @@ function fmt(n){return Math.floor(n||0).toLocaleString('ko-KR');}
 function fmtTime(t){t=Math.round(t||0);return (t>=60?Math.floor(t/60)+'분 ':'')+(t%60)+'초';}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
 
+/* ---- 관리자 검증: 서버 시계로 잰 실제 플레이 시간과 정상 속도일 때 걸리는 시간을 비교 ---- */
+// 카우런 속도 = 37 - 17·e^(-거리/3800)  →  거리 d까지 정상적으로 걸리는 시간
+function expectSec(d){let t=0;const st=25;for(let x=0;x<d;x+=st){const h=Math.min(st,d-x),m=x+h/2;t+=h/(37-17*Math.exp(-m/3800));}return t;}
+const RUNS={},runWait={};let suspectOnly=false,AUDIT_FROM=0;
+function loadRun(id){if(!id||RUNS[id]!==undefined||runWait[id])return;runWait[id]=1;
+  fetch(DB+'/runs/'+id+'.json').then(r=>r.ok?r.json():null).then(v=>{RUNS[id]=v||null;delete runWait[id];render();}).catch(()=>{delete runWait[id];});}
+function audit(r){
+  if(!('rt' in r)&&!r.run){
+    // 검증 기능이 적용된 뒤(첫 검증 기록 이후)에 들어온 기록인데 검증 정보가 없으면 게임을 거치지 않은 것
+    if(AUDIT_FROM&&(r.at||0)>AUDIT_FROM)return {lv:2,tag:'의심',why:'게임을 거치지 않고 직접 등록된 기록이에요.'};
+    return {lv:-1,tag:'검증 정보 없음',why:'검증 기능을 넣기 전에 등록된 기록이에요.'};}
+  if(!r.run)return {lv:2,tag:'의심',why:'게임 시작 기록 없이 등록됐어요.'};
+  const run=RUNS[r.run];
+  if(run===undefined){loadRun(r.run);return {lv:-1,tag:'확인 중…',why:''};}
+  if(!run||!run.s||!run.e)return {lv:2,tag:'의심',why:'서버에 게임 시작·끝 기록이 없어요.'};
+  const real=(run.e-run.s)/1000,exp=expectSec(r.dist||0),pz=r.pz||0,why=[];let lv=0;
+  const detail=`실제 ${fmtTime(real)} · 정상 속도 예상 ${fmtTime(exp)} · 일시정지 ${fmtTime(pz)}`;
+  if(real<exp*0.85-3){lv=2;why.push('정상 속도보다 너무 빨리 끝났어요 (점수 조작 의심)');}
+  const ratio=real/(exp+pz+8);
+  if(ratio>=1.5){lv=2;why.push('정상 속도보다 훨씬 오래 걸렸어요 (속도 늦추기 의심)');}
+  else if(ratio>=1.2){lv=Math.max(lv,1);why.push('정상보다 조금 오래 걸렸어요');}
+  if(r.dr&&r.dr<0.85){lv=2;why.push(`게임 속 시계가 실제보다 느려요 (${r.dr}배)`);}
+  const active=(r.rt||real)-pz;if(active>20&&r.time&&r.time/active<0.8){lv=Math.max(lv,1);why.push('게임 시간이 실제 시간보다 짧아요 (렉 또는 조작)');}
+  if(pz>120){lv=Math.max(lv,1);why.push('일시정지가 길어요');}
+  return {lv,tag:['정상','확인 필요','의심'][lv],why:(why.length?why.join(' · ')+'\n':'')+detail};
+}
 function render(force){
   const list=$('list');
   if(editing&&!force&&document.activeElement&&document.activeElement.tagName==='INPUT'&&list.contains(document.activeElement))return; // don't redraw while typing
   let rows=Object.keys(data).map(id=>Object.assign({id},data[id])).filter(r=>r&&typeof r.score==='number');
   rows.sort((a,b)=>b.score-a.score||(a.at||0)-(b.at||0));
   if(!admin){const seen=new Set();rows=rows.filter(r=>{const k=String(r.name);if(seen.has(k))return false;seen.add(k);return true;});rows=rows.slice(0,20);}
+  else{AUDIT_FROM=Math.min(...rows.filter(r=>'rt' in r&&r.at).map(r=>r.at),Infinity);if(AUDIT_FROM===Infinity)AUDIT_FROM=0;rows.forEach(r=>r._a=audit(r));const n=rows.filter(r=>r._a.lv>=1).length;$('auditSum').textContent=`의심 ${rows.filter(r=>r._a.lv===2).length}건 · 확인 필요 ${rows.filter(r=>r._a.lv===1).length}건`;if(suspectOnly)rows=rows.filter(r=>r._a.lv>=1);}
   list.textContent='';
   if(!rows.length){list.appendChild(el('div','empty',DB?'아직 등록된 기록이 없어요. 첫 번째 주인공이 되어 보세요!':'config.js에 Firebase 주소가 아직 없어요.'));return;}
   rows.forEach((r,i)=>{
@@ -106,6 +140,7 @@ function render(force){
     const sub=el('div','sub');sub.appendChild(el('span','gd',grade(r.score)));sub.appendChild(document.createTextNode(fmt(r.dist)+'m · '+fmtTime(r.time)+(admin&&r.at?' · '+new Date(r.at).toLocaleString('ko-KR'):'')));mid.appendChild(sub);
     row.appendChild(mid);row.appendChild(el('div','sc',fmt(r.score)+'점'));
     if(admin){
+      const a=r._a,au=el('div','audit l'+a.lv);au.innerHTML=`<b>${a.tag}</b>${a.why?`<span>${a.why.replace(/\n/g,'<br>')}</span>`:''}`;row.appendChild(au);
       const t=el('div','tools');
       if(editing===r.id){
         const n=el('input');n.value=r.name;n.maxLength=12;const s=el('input');s.type='number';s.value=r.score;
@@ -169,6 +204,7 @@ $('loginBtn').onclick=async()=>{
   }catch(e){$('loginErr').textContent='로그인 요청을 보내지 못했어요. 인터넷 연결을 확인해 주세요.';}
 };
 $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click();});
+$('suspBtn').onclick=()=>{suspectOnly=!suspectOnly;$('suspBtn').textContent=suspectOnly?'전체 기록 보기':'의심 기록만 보기';render(true);};
 $('logoutBtn').onclick=()=>{token=null;admin=false;editing=null;wipeArmed=false;$('wipeBtn').textContent='전체 기록 삭제';
   $('adminBar').style.display='none';$('admBtn').style.display='inline-block';document.body.classList.remove('admin');render();};
 $('wipeBtn').onclick=async()=>{

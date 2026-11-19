@@ -593,6 +593,20 @@ function showMenu(){
   $('menu').style.display='flex';$('over').style.display='none';$('pause').style.display='none';$('hud').style.display='none';
   $('bestLine').textContent=best?`내 최고 점수: ${fmt(best)}점`:'';
 }
+// ---- 검증용 기록: 시작·끝을 서버 시계로 남겨 관리자 화면에서 비교해요 ----
+let AUD={id:null,idP:null,p0:0,d0:0,pz:0,pzStart:0,real:0,perf:0};
+function runStart(){
+  AUD={id:null,idP:null,p0:performance.now(),d0:Date.now(),pz:0,pzStart:0,real:0,perf:0};
+  if(!DB)return;
+  AUD.idP=fetch(DB+'/runs.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({s:{'.sv':'timestamp'}})})
+    .then(r=>r.ok?r.json():null).then(j=>{AUD.id=j&&j.name||null;return AUD.id;}).catch(()=>null);
+}
+function runEnd(){
+  AUD.real=Date.now()-AUD.d0;AUD.perf=performance.now()-AUD.p0;
+  if(AUD.pzStart){AUD.pz+=Date.now()-AUD.pzStart;AUD.pzStart=0;}
+  const p=AUD.idP;if(!p)return;
+  p.then(id=>{if(id)fetch(DB+'/runs/'+id+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({e:{'.sv':'timestamp'}})}).catch(()=>{});});
+}
 function startGame(){
   initAudio();
   const nv=($('nick').value||'').trim();
@@ -601,7 +615,7 @@ function startGame(){
   nick=nv;
   try{localStorage.setItem('cowNick',nick);}catch(e){}
   $('nick').blur();
-  newGame();state='play';hudCache={};
+  newGame();state='play';hudCache={};runStart();
   $('menu').style.display='none';$('over').style.display='none';$('pause').style.display='none';$('hud').style.display='flex';
   toast('정육점 아저씨가 쫓아온다! 도망쳐!');
   beep(523,.1);setTimeout(()=>beep(659,.1),110);setTimeout(()=>beep(784,.18),220);
@@ -616,7 +630,7 @@ function showOver(){
   $('oMsg').textContent=msg;
   $('oDist').textContent=fmt(g.dist)+'점';$('oGrass').textContent=g.grass+'개 → '+fmt(g.grass*10)+'점';
   $('oSmash').textContent=g.smash+'개 → '+fmt(g.smash*50)+'점';$('oTime').textContent=fmtTime(g.t);
-  lastRes={name:nick,score:sc,dist:Math.floor(g.dist),time:Math.round(g.t)};
+  lastRes={name:nick,score:sc,dist:Math.floor(g.dist),time:Math.round(g.t),pz:Math.round(AUD.pz/1000),rt:Math.round(AUD.real/1000),dr:AUD.real>0?Math.round(AUD.perf/AUD.real*1000)/1000:1};
   if(DB){const b=$('rankBtn');b.style.display='block';b.disabled=false;b.textContent='랭킹 등록';$('rankMsg').textContent='';}$('oScore').textContent=fmt(sc);
   if(sc>best){best=sc;try{localStorage.setItem('cowBest',best);}catch(e){}$('oNew').innerHTML='<span class="new">신기록!</span>';}
   else $('oNew').innerHTML='';
@@ -631,6 +645,7 @@ $('rankBtn').onclick=async()=>{
   const b=$('rankBtn');if(!lastRes||b.disabled)return;
   b.disabled=true;b.textContent='등록 중…';
   try{
+    if(AUD.idP){const id=await AUD.idP;if(id)lastRes.run=id;}
     const r=await fetch(DB+'/scores.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({at:{'.sv':'timestamp'}},lastRes))});
     if(!r.ok)throw new Error(r.status);
     b.textContent='등록 완료!';$('rankMsg').textContent=lastRes.name+' · '+fmt(lastRes.score)+'점이 랭킹에 올라갔어요.';lastRes=null;
@@ -638,6 +653,7 @@ $('rankBtn').onclick=async()=>{
 };
 function pauseGame(){
   if(state!=='play'&&state!=='count')return;
+  if(!AUD.pzStart)AUD.pzStart=Date.now();
   state='pause';updateHud();$('pInfo').textContent=fmt(g.dist)+'m · '+fmt(score())+'점';$('pause').style.display='flex';
 }
 function resumeGame(){if(state!=='pause')return;$('pause').style.display='none';g.countT=1.8;state='count';}
@@ -660,6 +676,7 @@ function updateHud(){
 
 /* ================= update ================= */
 function caught(){
+  runEnd();
   state='caught';g.caughtT=0;g.flash=1;updateHud();
   beep(160,.5,'sawtooth',.08,60);
   if(navigator.vibrate)try{navigator.vibrate(200);}catch(e){}
@@ -670,7 +687,7 @@ function smashObj(o){
 }
 function update(dt){
   if(state==='pause')return;
-  if(state==='count'){g.countT-=dt;if(g.countT<=0)state='play';return;}
+  if(state==='count'){g.countT-=dt;if(g.countT<=0){state='play';if(AUD.pzStart){AUD.pz+=Date.now()-AUD.pzStart;AUD.pzStart=0;}}return;}
   if(state==='menu'||state==='over'){g.offset+=dt*6;g.runPhase+=dt*7;return;}
   if(state==='caught'){g.caughtT+=dt;g.flash=Math.max(0,g.flash-dt*1.5);if(g.caughtT>1.4)showOver();return;}
   g.t+=dt;
