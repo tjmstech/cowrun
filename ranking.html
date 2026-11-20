@@ -47,6 +47,12 @@ button,input{font-family:var(--f)}
 .audit.l0 b{background:#3fb81e}.audit.l1{background:#fff7dc;color:#7a5a00}.audit.l1 b{background:#f0a000}.audit.l2{background:#ffe6e2;color:#a8281a}.audit.l2 b{background:#e23a2a}
 .audit.l-1 b{background:#b9c4cf}
 .auditbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.roster{margin-top:10px;background:#f6f8ff;border:2px solid #dfe4fb;border-radius:12px;padding:8px 10px;font-size:13px;color:#2c4a6e}
+.roster summary{font-weight:900;cursor:pointer}
+.rrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.rrow input{font-size:14px;padding:5px 8px;border:2px solid #cfd6fa;border-radius:8px}
+.rnote{font-size:12px;color:#6a7ab0;margin-top:4px;line-height:1.45}
+.rmsg{margin-top:8px;font-weight:700;min-height:1.2em;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -80,6 +86,15 @@ button,input{font-family:var(--f)}
         <button class="b gray" id="logoutBtn">관리자 모드 끄기</button>
       </div>
       <div class="err" id="admErr"></div>
+      <details class="roster" id="rosterBox">
+        <summary>학생 명단 관리</summary>
+        <div class="rnote">명단에 있는 학번 + 이름으로만 게임을 시작하거나 가입할 수 있어요. 두 게임이 같은 명단을 써요.</div>
+        <div class="rrow"><b>명단 파일 올리기</b><input type="file" id="rosFile" accept=".json,application/json"><button class="b red" id="rosUp">올리기</button></div>
+        <div class="rnote">roster.json을 고르고 올리면 기존 명단을 통째로 바꿔요.</div>
+        <div class="rrow"><b>학번 조회·수정</b><input id="rosId" inputmode="numeric" maxlength="5" placeholder="학번 5자리" style="width:96px"><button class="b" id="rosLook">조회</button></div>
+        <div class="rrow"><input id="rosName" placeholder="이름 (예: 홍길동)" style="width:120px"><button class="b" id="rosAdd">이 학번에 이름 추가</button><button class="b red" id="rosDel">이 학번 삭제</button></div>
+        <div class="rmsg" id="rosMsg"></div>
+      </details>
       <div class="note">점수 상위 300개 기록까지 표시돼요.</div>
     </div>
   </div>
@@ -213,6 +228,33 @@ $('wipeBtn').onclick=async()=>{
   try{await call('DELETE','/scores.json');}catch(e){}
 };
 connect();
+
+/* ---- 학생 명단 관리 (관리자) ---- */
+(function(){
+  const msg=t=>{$('rosMsg').textContent=t||'';};
+  const req=async(method,path,body)=>{const r=await fetch(DB+path+'.json?auth='+encodeURIComponent(token),{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+    if(r.status===401||r.status===403)throw new Error('권한이 없어요. 관리자 로그인과 Firebase 규칙을 확인해 주세요.');if(!r.ok)throw new Error('요청 실패 ('+r.status+')');return r.json();};
+  const sid=()=>{const v=$('rosId').value.trim();if(!/^\d{5}$/.test(v)){msg('학번 5자리를 적어 주세요.');return null;}return v;};
+  $('rosUp').onclick=async()=>{
+    const f=$('rosFile').files[0];if(!f){msg('roster.json 파일을 먼저 골라 주세요.');return;}
+    let d;try{d=JSON.parse(await f.text());}catch(e){msg('JSON 파일을 읽을 수 없어요.');return;}
+    if(d&&d.roster)d=d.roster;
+    const ids=Object.keys(d||{}).filter(k=>/^\d{5}$/.test(k));
+    if(!ids.length){msg('명단 형식이 아니에요.');return;}
+    const b=$('rosUp');if(!b.dataset.arm){b.dataset.arm=1;b.textContent=`${ids.length}명으로 바꿀까요? 한 번 더`;setTimeout(()=>{delete b.dataset.arm;b.textContent='올리기';},4000);return;}
+    delete b.dataset.arm;b.textContent='올리는 중…';
+    try{await req('PUT','/roster',d);msg(`명단을 올렸어요. 총 ${ids.length}개 학번이에요.`);}catch(e){msg(e.message);}
+    b.textContent='올리기';
+  };
+  $('rosLook').onclick=async()=>{const id=sid();if(!id)return;try{const v=await req('GET','/roster/'+id);msg(v?`${id}: ${Object.keys(v).join(', ')}`:`${id}: 명단에 없어요`);}catch(e){msg(e.message);}};
+  $('rosAdd').onclick=async()=>{const id=sid();if(!id)return;const n=$('rosName').value.replace(/\s+/g,'');
+    if(!n||n.length>30||/[.$#\[\]\/]/.test(n)){msg('이름을 1~30자로 적어 주세요. 기호 . $ # [ ] / 는 쓸 수 없어요.');return;}
+    try{await req('PATCH','/roster/'+id,{[n]:true});msg(`${id} ${n} 을(를) 명단에 넣었어요.`);$('rosName').value='';}catch(e){msg(e.message);}};
+  $('rosDel').onclick=async()=>{const id=sid();if(!id)return;const b=$('rosDel');
+    if(!b.dataset.arm){b.dataset.arm=1;b.textContent='정말 삭제? 한 번 더';setTimeout(()=>{delete b.dataset.arm;b.textContent='이 학번 삭제';},3000);return;}
+    delete b.dataset.arm;b.textContent='이 학번 삭제';
+    try{await req('DELETE','/roster/'+id);msg(`${id} 을(를) 명단에서 지웠어요. 이제 이 학번으로는 시작·가입할 수 없어요.`);}catch(e){msg(e.message);}};
+})();
 </script>
 </body>
 </html>

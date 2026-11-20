@@ -104,7 +104,7 @@ tr.tot td{border-top:2px dashed #cfe7ff;font-size:21px;color:#f4511e}
     <img class="hero" id="heroImg" src="cow.png" alt="">
     <div class="sub">소고기가 되기 싫어! 농장을 탈출하라!</div>
     <div class="nlabel" id="nLabel">학번+이름을 적고 시작하세요</div>
-    <input id="nick" maxlength="12" placeholder="예: 30215홍길동" autocomplete="off">
+    <input id="nick" maxlength="30" placeholder="예: 30215홍길동" autocomplete="off">
     <button class="btn" id="startBtn">게임 시작</button>
     <div class="how">
       <div class="t">조작 · 화면을 스와이프!</div>
@@ -607,12 +607,34 @@ function runEnd(){
   const p=AUD.idP;if(!p)return;
   p.then(id=>{if(id)fetch(DB+'/runs/'+id+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({e:{'.sv':'timestamp'}})}).catch(()=>{});});
 }
-function startGame(){
+// ---- 명단 확인: 학번 + 이름이 명단과 맞아야 시작할 수 있어요 ----
+let WHO=null,whoInput='',checking=false;
+function nickWarn(t){const l=$('nLabel');l.textContent=t;l.className='nlabel warn';$('nick').focus();}
+function matchName(obj,raw){if(!obj||typeof obj!=='object')return null;const ks=Object.keys(obj).filter(k=>obj[k]===true);
+  return ks.find(k=>k===raw)||ks.find(k=>k.toLowerCase()===raw.toLowerCase())||null;}
+async function verifyNick(v){
+  const t=v.replace(/\s+/g,''),m=t.match(/^(\d{5})(.+)$/);
+  if(!m){nickWarn('학번 5자리와 이름을 붙여서 적어 주세요. 예: 30215홍길동');return null;}
+  if(!DB)return {sid:m[1],nm:m[2]};   // 서버 설정이 없는 미리보기 화면에서는 확인을 건너뛰어요
+  let obj;
+  try{const r=await fetch(DB+'/roster/'+m[1]+'.json');if(!r.ok)throw 0;obj=await r.json();}
+  catch(e){nickWarn('인터넷 연결을 확인하고 다시 눌러 주세요.');return null;}
+  if(!obj){nickWarn('명단에 없는 학번이에요. 학번을 다시 확인해 주세요.');return null;}
+  const nm=matchName(obj,m[2]);
+  if(!nm){nickWarn('학번과 이름이 맞지 않아요. 다시 확인해 주세요.');return null;}
+  return {sid:m[1],nm};
+}
+async function startGame(){
   initAudio();
   const nv=($('nick').value||'').trim();
-  if(!nv){const l=$('nLabel');l.textContent='학번+이름을 먼저 적어 주세요!';l.className='nlabel warn';$('nick').focus();return;}
+  if(!nv){nickWarn('학번+이름을 먼저 적어 주세요!');return;}
+  if(!WHO||whoInput!==nv){
+    if(checking)return;checking=true;const b=$('startBtn');b.disabled=true;b.textContent='확인 중…';
+    const w=await verifyNick(nv);checking=false;b.disabled=false;b.textContent='게임 시작';
+    if(!w)return;WHO=w;whoInput=nv;
+  }
   $('nLabel').textContent='학번+이름을 적고 시작하세요';$('nLabel').className='nlabel';
-  nick=nv;
+  nick=WHO.sid+WHO.nm;
   try{localStorage.setItem('cowNick',nick);}catch(e){}
   $('nick').blur();
   newGame();state='play';hudCache={};runStart();
@@ -630,7 +652,7 @@ function showOver(){
   $('oMsg').textContent=msg;
   $('oDist').textContent=fmt(g.dist)+'점';$('oGrass').textContent=g.grass+'개 → '+fmt(g.grass*10)+'점';
   $('oSmash').textContent=g.smash+'개 → '+fmt(g.smash*50)+'점';$('oTime').textContent=fmtTime(g.t);
-  lastRes={name:nick,score:sc,dist:Math.floor(g.dist),time:Math.round(g.t),pz:Math.round(AUD.pz/1000),rt:Math.round(AUD.real/1000),dr:AUD.real>0?Math.round(AUD.perf/AUD.real*1000)/1000:1};
+  lastRes={name:nick,sid:WHO?WHO.sid:'',nm:WHO?WHO.nm:'',score:sc,dist:Math.floor(g.dist),time:Math.round(g.t),pz:Math.round(AUD.pz/1000),rt:Math.round(AUD.real/1000),dr:AUD.real>0?Math.round(AUD.perf/AUD.real*1000)/1000:1};
   if(DB){const b=$('rankBtn');b.style.display='block';b.disabled=false;b.textContent='랭킹 등록';$('rankMsg').textContent='';}$('oScore').textContent=fmt(sc);
   if(sc>best){best=sc;try{localStorage.setItem('cowBest',best);}catch(e){}$('oNew').innerHTML='<span class="new">신기록!</span>';}
   else $('oNew').innerHTML='';
